@@ -45,7 +45,6 @@ public:
         };
 
         ble.setup(ble_events);
-        ble.scan_timeout(SCAN_TIMEOUT_MS);
     }
     
     void exit() {

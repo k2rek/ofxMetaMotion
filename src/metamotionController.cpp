@@ -18,28 +18,27 @@ metamotionController::metamotionController() {
 }
 
 metamotionController::~metamotionController() {
-    if (isConnected){
+    if (isConnected) {
         disconnectDevice(board);
     }
 }
 
 //----------------------------------------------------- setup.
+
+// setup the nativeble object, which will trigger the system dialog asking for bluetooth access, but do not scan yet.
 void metamotionController::setup() {
-    //getDeviceIDs();
     nativeble.setup();
-    resetOrientation();
-    search();
 }
 
 void metamotionController::search() {
     isSearching = true;
-    if (!nativeble.connected){
+    if (!nativeble.connected) {
         isConnected = false;
         if (nativeble.devices.size() < 1) { // if there are no found devices search again
             nativeble.rescanDevices();
-        } else if (nativeble.devices.size() > 0){ // if there are found devices
+        } else if (nativeble.devices.size() > 0) { // if there are found devices
             metaMotionDeviceIndex = nativeble.findMetaMotionDevice(); // store autofound index
-            if (metaMotionDeviceIndex == -1){ // but they are not MetaMotion search again
+            if (metaMotionDeviceIndex == -1) { // but they are not MetaMotion search again
                 nativeble.listDevices();
                 nativeble.rescanDevices();
             } else if (metaMotionDeviceIndex > -1) { // connect to found device in case the above didnt work
@@ -70,9 +69,9 @@ void metamotionController::search() {
     isSearching = false;
 }
 
-void metamotionController::update(){
-    if(nativeble.connected){ // when connected section
-        if (bUseMagnoHeading){
+void metamotionController::update() {
+    if (nativeble.connected) { // when connected section
+        if (bUseMagnoHeading) {
             angle[0] = outputEuler[0];
         } else {
             angle[0] = outputEuler[3];
@@ -88,7 +87,7 @@ void metamotionController::update(){
 }
 
 void metamotionController::disconnectDevice(MblMwMetaWearBoard* board) {
-    if (isConnected){
+    if (isConnected) {
         disable_led(board);
         mbl_mw_metawearboard_free(board);
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -134,7 +133,7 @@ void metamotionController::configure_sensor_fusion(MblMwMetaWearBoard* board) {
     mbl_mw_sensor_fusion_write_config(board);
     
     // set the tx power as high as allowed
-    if (mbl_mw_metawearboard_get_model(board) == MBL_MW_MODEL_METAMOTION_S){
+    if (mbl_mw_metawearboard_get_model(board) == MBL_MW_MODEL_METAMOTION_S) {
         mbl_mw_settings_set_tx_power(board, 8);
     } else {
         mbl_mw_settings_set_tx_power(board, 4);
@@ -168,11 +167,11 @@ int metamotionController::get_battery_percentage(MblMwMetaWearBoard* board) {
 
 void metamotionController::set_ad_name(MblMwMetaWearBoard* board) {
     const char* charName;
-    if (mbl_mw_metawearboard_get_model(board) == MBL_MW_MODEL_METAMOTION_S){
+    if (mbl_mw_metawearboard_get_model(board) == MBL_MW_MODEL_METAMOTION_S) {
         charName = "Mach1-MMS";
-    } else if (mbl_mw_metawearboard_get_model(board) == MBL_MW_MODEL_METAMOTION_RL){
+    } else if (mbl_mw_metawearboard_get_model(board) == MBL_MW_MODEL_METAMOTION_RL) {
         charName = "Mach1-MMRL";
-    } else if (mbl_mw_metawearboard_get_model(board) == MBL_MW_MODEL_METAWEAR_R){
+    } else if (mbl_mw_metawearboard_get_model(board) == MBL_MW_MODEL_METAWEAR_R) {
         charName = "Mach1-MMR";
     } else {
         charName = "MetaWear";
@@ -188,7 +187,7 @@ void metamotionController::set_ad_name(MblMwMetaWearBoard* board) {
     mbl_mw_settings_set_device_name(board, name, strlen(charName));
 }
 
-void metamotionController::get_ad_name(MblMwMetaWearBoard* board){
+void metamotionController::get_ad_name(MblMwMetaWearBoard* board) {
     // This function is for calling the name via metamotion
     // A better way is to get the name via nativeble.devices[0].name
     uint32_t size;
@@ -205,7 +204,7 @@ void metamotionController::enable_fusion_sampling(MblMwMetaWearBoard* board) {
         auto *wrapper = static_cast<metamotionController *>(context);
         
         auto euler = (MblMwEulerAngles*)data->value;
-        if (wrapper->bUseMagnoHeading){ // externally set use of magnometer to correct IMU or not
+        if (wrapper->bUseMagnoHeading) { // externally set use of magnometer to correct IMU or not
             wrapper->outputEuler[0] = euler->heading;
             wrapper->outputEuler[3] = euler->yaw;
         } else {
@@ -268,7 +267,7 @@ float* metamotionController::getAngle() {
     return calculated_angle;
 }
 
-string HighLow2Uuid(const uint64_t high, const uint64_t low){
+string HighLow2Uuid(const uint64_t high, const uint64_t low) {
     uint8_t *u_h = (uint8_t *)&(high);
     uint8_t *u_l = (uint8_t *)&(low);
 
@@ -292,7 +291,7 @@ void metamotionController::read_gatt_char(void *context, const void *caller, con
 
 
 void metamotionController::write_gatt_char(void *context, const void *caller, MblMwGattCharWriteType writeType,
-                                          const MblMwGattChar *characteristic, const uint8_t *value, uint8_t length){
+                                          const MblMwGattChar *characteristic, const uint8_t *value, uint8_t length) {
     auto *wrapper = static_cast<metamotionController *>(context);
     wrapper->nativeble.ble.write_command(HighLow2Uuid(characteristic->service_uuid_high, characteristic->service_uuid_low), HighLow2Uuid(characteristic->uuid_high, characteristic->uuid_low), std::string((char*)value, int(length)));
 }

@@ -49,7 +49,7 @@ public:
     void update();
     
     // returns available bluetooth devices
-    std::vector<string> getDeviceIDs();
+    std::vector<string> getDeviceIDs();         // not implemented?
     
     // ble connection functions
     void search();
@@ -62,7 +62,7 @@ public:
     float outputEuler[4];
     float* getAngle();
     float angle[3];
-    float angle_shift[3];
+    float angle_shift[3] = {};
     int battery_level;
     const char* module_name;
     
