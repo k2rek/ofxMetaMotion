@@ -30,18 +30,21 @@ void metamotionController::setup() {
     nativeble.setup();
 }
 
-void metamotionController::search() {
+// searches for MetaMotion devices, and connects to the first available, returning true if successful
+bool metamotionController::searchAndConnect() {
     isSearching = true;
+    
     if (!nativeble.connected) {
         isConnected = false;
-        if (nativeble.devices.size() < 1) { // if there are no found devices search again
-            nativeble.rescanDevices();
-        } else if (nativeble.devices.size() > 0) { // if there are found devices
-            metaMotionDeviceIndex = nativeble.findMetaMotionDevice(); // store autofound index
-            if (metaMotionDeviceIndex == -1) { // but they are not MetaMotion search again
-                nativeble.listDevices();
-                nativeble.rescanDevices();
-            } else if (metaMotionDeviceIndex > -1) { // connect to found device in case the above didnt work
+        // scan for bluetooth devices
+        if (nativeble.rescanDevices() > 0) {                                    // if one or more devices were found
+            // list all found devices
+            nativeble.listDevices();
+            // search found devices for a MetaMotion
+            metaMotionDeviceIndex = nativeble.findMetaMotionDevice();
+            if (metaMotionDeviceIndex > -1) {                                      // if a MetaMotion is found
+                // connect to it
+                std::cout << "Connecting to MetaWear device..." << std::endl;
                 nativeble.connect(metaMotionDeviceIndex);
                 // setup meta motion
                 MblMwBtleConnection btleConnection;
@@ -54,7 +57,7 @@ void metamotionController::search() {
                 mbl_mw_metawearboard_initialize(board, this, [](void* context, MblMwMetaWearBoard* board, int32_t status) -> void {
                     auto dev_info = mbl_mw_metawearboard_get_device_information(board);
                     std::cout << "firmware revision number = " << dev_info->firmware_revision << std::endl;
-                    std::cout << "model = " << mbl_mw_metawearboard_get_model(board) << std::endl;
+                    std::cout << "model = " << mbl_mw_metawearboard_get_model_name(board) << std::endl;
                     auto *wrapper = static_cast<metamotionController *>(context);
                     wrapper->enable_fusion_sampling(wrapper->board);
                     wrapper->get_current_power_status(wrapper->board);
@@ -63,10 +66,19 @@ void metamotionController::search() {
                 });
                 isConnected = true;
                 isSearching = false;
+                return true;
+            } else {
+                std::cout << "None of the discovered devices are MetaWears." << std::endl;
             }
+        } else {
+            std::cout << "No devices found." << std::endl;
         }
+        
+    } else {
+        std::cout << "A device is already connected! Aborting search." << std::endl;
     }
     isSearching = false;
+    return false;
 }
 
 void metamotionController::update() {
@@ -89,8 +101,11 @@ void metamotionController::update() {
 void metamotionController::disconnectDevice(MblMwMetaWearBoard* board) {
     if (isConnected) {
         disable_led(board);
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
+        disable_fusion_sampling(board);
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
         mbl_mw_metawearboard_free(board);
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
     }
     isConnected = false;
     isSearching = false;

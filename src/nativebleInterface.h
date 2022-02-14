@@ -29,10 +29,11 @@ public:
         // Setup callback functions
         ble_events.callback_on_device_disconnected = [](std::string msg) {
             std::cout << "Disconnected: " << msg << std::endl;
+            ofSendMessage("Disconnected: " + msg);
             return;
         };
         ble_events.callback_on_device_connected = []() {
-            std::cout << "Connected" << std::endl;
+            std::cout << "Connected!" << std::endl;
         };
         ble_events.callback_on_scan_found = [&](NativeBLE::DeviceDescriptor device) {
             devices.push_back(device);
@@ -49,21 +50,24 @@ public:
     
     void exit() {
         ble.disconnect();
+        connected = false;
         ble.dispose();
     }
     
-    void rescanDevices(){
+    // return valuse is the number of devices found
+    int rescanDevices() {
         ble.scan_timeout(SCAN_TIMEOUT_MS);
+        return devices.size();
     }
     
-    void listDevices(){
+    void listDevices() {
         std::cout << devices.size() << " devices found:" << std::endl;
         for (int i = 0; i < devices.size(); i++) {
             std::cout << "  " << i << ": " << devices[i].name << " (" << devices[i].address << ")" << std::endl;
         }
     }
     
-    int findMetaMotionDevice(){
+    int findMetaMotionDevice() {
         for (int i = 0; i < devices.size(); i++) {
             if (devices[i].name.find("MetaWear") != std::string::npos || devices[i].name.find("Mach1-") != std::string::npos) {
                 std::cout << "Auto found MetaMotion: " << devices[i].address << '\n';
@@ -81,5 +85,6 @@ public:
     
     bool disconnect() {
         ble.disconnect();
+        connected = false;
     }
 };

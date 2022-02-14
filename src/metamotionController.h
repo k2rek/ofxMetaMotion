@@ -48,13 +48,16 @@ public:
     void setup();
     void update();
     
-    // returns available bluetooth devices
-    std::vector<string> getDeviceIDs();         // not implemented?
+    /*
+    // not implemented?
+    std::vector<string> getDeviceIDs();
+    void connectDevice(int deviceID);
+    std::vector<NativeBLE::DeviceDescriptor> devices;
+    */
     
     // ble connection functions
-    void search();
+    bool searchAndConnect();
     bool isSearching = false;
-    void connectDevice(int deviceID);
     void disconnectDevice(MblMwMetaWearBoard* board);
     bool isConnected = false;
     
@@ -69,7 +72,6 @@ public:
     // ble
     nativebleInterface nativeble;
     int metaMotionDeviceIndex;
-    std::vector<NativeBLE::DeviceDescriptor> devices;
     
     MblMwMetaWearBoard * board;
     void data_printer(void* context, const MblMwData* data);
