@@ -65,6 +65,7 @@ public:
     float outputEuler[4];
     float* getAngle();
     float angle[3];
+    float yawCorrection = 0.0;
     float angle_shift[3] = {};
     int battery_level;
     const char* module_name;
@@ -86,7 +87,7 @@ public:
     void set_ad_name(MblMwMetaWearBoard* board);
     void get_ad_name(MblMwMetaWearBoard* board);
 
-    void resetOrientation();
+    void setReferenceYaw();
     void recenter();
     
     static void read_gatt_char(void *context, const void *caller, const MblMwGattChar *characteristic,

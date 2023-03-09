@@ -5,6 +5,9 @@
 //  References can be found at https://mbientlab.com/cppdocs/latest/index.html
 //
 
+#define PI 3.14159265
+#define PI_180 0.01745329
+
 #include "metamotionController.h"
 #include "ofMain.h"
 
@@ -239,8 +242,8 @@ void metamotionController::enable_fusion_sampling(MblMwMetaWearBoard* board) {
 
 void metamotionController::enable_led(MblMwMetaWearBoard* board) {
     MblMwLedPattern pattern;
-    pattern = { 8, 0, 250, 250, 250, 5000, 0, 0 };
-    mbl_mw_led_write_pattern(board, &pattern, MBL_MW_LED_COLOR_RED);
+    pattern = { 16, 0, 0, 1000, 0, 1000, 0, 0 };
+    mbl_mw_led_write_pattern(board, &pattern, MBL_MW_LED_COLOR_GREEN);
     mbl_mw_led_play(board);
 }
 
@@ -259,27 +262,33 @@ void metamotionController::calibration_mode(MblMwMetaWearBoard* board) {
     
 }
 
-void metamotionController::resetOrientation() {
-    for(int i=0; i< 3; i++){
-        angle_shift[i] = 0;
-    }
+// sets "reference" yaw
+void metamotionController::setReferenceYaw() {
+    angle_shift[0] = 0;
+    yawCorrection = angle[0];
 }
 
+// zeros angles, outputs new angles relative to reference yaw axis
 void metamotionController::recenter() {
-    angle_shift[0] = -angle[0];
-    angle_shift[1] = -angle[1];
-    angle_shift[2] = -angle[2];
+    
+    float correctedYaw = angle[0] - yawCorrection;
+    if (correctedYaw < 0)
+        correctedYaw += 360;
+    
+    angle_shift[0] = correctedYaw;
+    angle_shift[1] = angle[1];
+    angle_shift[2] = angle[2];
 }
 
 float* metamotionController::getAngle() {
     float* calculated_angle = new float[3];
         
-    calculated_angle[0] = angle[0] + angle_shift[0];
+    calculated_angle[0] = angle[0] - yawCorrection - angle_shift[0];
     if (calculated_angle[0] < 0)
         calculated_angle[0] += 360;
     
-    calculated_angle[1] = angle[1] + angle_shift[1];
-    calculated_angle[2] = angle[2] + angle_shift[2];
+    calculated_angle[1] = ( (angle[1]-angle_shift[1]) * cos(angle_shift[0] * PI_180) ) + ( (angle[2]-angle_shift[2]) * sin(angle_shift[0] * PI_180) );
+    calculated_angle[2] = ( (angle[2]-angle_shift[2]) * cos(angle_shift[0] * PI_180) ) - ( (angle[1]-angle_shift[1]) * sin(angle_shift[0] * PI_180) );
     
     return calculated_angle;
 }
